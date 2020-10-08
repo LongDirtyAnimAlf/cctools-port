@@ -1,4 +1,4 @@
-# Apple cctools and ld64 port for Linux, *BSD and macOS #
+# Apple cctools and ld64 port for Linux, *BSD , Cygwin and macOS #
 
 Current Version: cctools: 949.0.1, ld64: 530.  
 Originally ported by [cjacker](http://ios-toolchain-based-on-clang-for-linux.googlecode.com).
@@ -8,7 +8,8 @@ Originally ported by [cjacker](http://ios-toolchain-based-on-clang-for-linux.goo
 **SUPPORTED OPERATING SYSTEMS:**
 
 Linux, Android (Termux), FreeBSD,  
-Mac OS X, iOS, OpenBSD and NetBSD
+Mac OS X, iOS, OpenBSD and NetBSD,
+Windows (Cygwin)
 
 **SUPPORTED HOST ARCHITECTURES:**
 
