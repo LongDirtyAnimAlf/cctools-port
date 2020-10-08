@@ -7,6 +7,7 @@ $(PTHREAD_FLAGS) $(CXXABI_LIB) $(DL_LIB) -lobjc
 else
 otool_LDADD = \
 $(top_builddir)/libstuff/libstuff.la \
+-lobjc \
 $(top_builddir)/libobjc2/libobjc.la \
 $(PTHREAD_FLAGS) $(CXXABI_LIB) $(DL_LIB) $(REALLOCF_LIB) $(GCC_LIB)
 endif

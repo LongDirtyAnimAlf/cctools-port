@@ -2632,12 +2632,6 @@ else
   ISDARWIN_TRUE='#'
   ISDARWIN_FALSE=
 fi
-
-  ;;
-  cygwin* )
-    echo "Cygwin is no longer supported." 1>&2
-    exit 1
-  ;;
 esac
 
 if test "x$CC" = "x"; then

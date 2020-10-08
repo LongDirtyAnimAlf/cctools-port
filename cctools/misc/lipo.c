@@ -117,8 +117,8 @@ static uint32_t nthin_files = 0;
 static char *output_file = NULL;
 static uint32_t output_filemode = 0;
 #ifndef __OPENSTEP__
-static struct timespec output_times[2] = { 0 };
-static struct timeval output_timev[2] = { 0 };
+static struct timespec output_times[2] = {{ 0 }};
+static struct timeval output_timev[2] = {{ 0 }};
 #else
 static time_t output_timep[2] = { 0 };
 #endif

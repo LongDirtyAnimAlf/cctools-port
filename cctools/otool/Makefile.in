@@ -348,6 +348,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @ISDARWIN_FALSE@otool_LDADD = \
 @ISDARWIN_FALSE@$(top_builddir)/libstuff/libstuff.la \
+@ISDARWIN_FALSE@-lobjc \
 @ISDARWIN_FALSE@$(top_builddir)/libobjc2/libobjc.la \
 @ISDARWIN_FALSE@$(PTHREAD_FLAGS) $(CXXABI_LIB) $(DL_LIB) $(REALLOCF_LIB) $(GCC_LIB)
 

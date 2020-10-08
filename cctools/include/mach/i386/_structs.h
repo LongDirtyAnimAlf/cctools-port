@@ -32,9 +32,10 @@
 #ifndef	_MACH_I386__STRUCTS_H_
 #define	_MACH_I386__STRUCTS_H_
 
+#ifndef __CYGWIN__
 #include <sys/cdefs.h> /* __DARWIN_UNIX03 */
 #include <machine/types.h> /* __uint8_t */
-
+#endif
 /*
  * i386 is the structure that is exported to user threads for 
  * use in status/mutate calls.  This structure should never change.

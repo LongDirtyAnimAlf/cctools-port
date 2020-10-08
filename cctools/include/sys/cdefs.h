@@ -1,5 +1,6 @@
 #if defined(__GLIBC__) || defined(__APPLE__) || defined(__FreeBSD__) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__ANDROID__)
+    defined(__OpenBSD__) || defined(__NetBSD__) || defined(__ANDROID__) || \
+    defined(__CYGWIN__)
 
 #include_next <sys/cdefs.h>
 

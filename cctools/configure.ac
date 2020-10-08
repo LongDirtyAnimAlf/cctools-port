@@ -42,10 +42,6 @@ case $host_os in
     isdarwin=yes
     AM_CONDITIONAL([ISDARWIN], [true])
   ;;
-  cygwin* )
-    echo "Cygwin is no longer supported." 1>&2
-    exit 1
-  ;;
 esac
 
 if test "x$CC" = "x"; then

@@ -1,11 +1,24 @@
-#define DTABLE_OFFSET  64
-#define SMALLOBJ_MASK  7
-#define SHIFT_OFFSET   4
-#define DATA_OFFSET    16
-#define SLOT_OFFSET    32
 
-.macro MSGSEND receiver, sel
-	.cfi_startproc                        # Start emitting unwind data.  We
+#if defined(__MSDOS__) || defined(_WIN64) || defined(__OS2__) || defined (__CYGWIN__)
+#	define START_PROC(x) .seh_proc x
+#	define END_PROC(x) .seh_endproc
+#	define FRAME_OFFSET(x) .seh_stackalloc x
+#	define FIRST_ARGUMENT_STR "%rcx"
+#	define FIRST_ARGUMENT %rcx
+#	define SECOND_ARGUMENT %rdx
+#	define THIRD_ARGUMENT %r8
+#else
+#	define START_PROC(x) .cfi_startproc
+#	define END_PROC(x) .cfi_endproc
+#	define FRAME_OFFSET(x) .cfi_adjust_cfa_offset x
+#	define FIRST_ARGUMENT_STR "%rdi"
+#	define FIRST_ARGUMENT %rdi
+#	define SECOND_ARGUMENT %rsi
+#	define THIRD_ARGUMENT %rdx
+#endif
+
+.macro MSGSEND fnname receiver, sel
+	START_PROC(\fnname)                   # Start emitting unwind data.  We
 	                                      # don't actually care about any of
 	                                      # the stuff except the slow call,
 	                                      # because that's the only one that
@@ -18,41 +31,28 @@
 	jnz   6f                              # Get the small object class
 
 	mov   (\receiver), %r10               # Load the dtable from the class
-1:                                        # classLoaded
-	mov   DTABLE_OFFSET(%r10), %r10       # Load the dtable from the class
-	
-	push  %r12
-	push  %r13
-
-	mov   (\sel), %r11                    # Load the selector index
-	mov   SHIFT_OFFSET(%r10), %r13        # Load the shift (dtable size)
-	mov   DATA_OFFSET(%r10), %r12         # load the address of the start of the array
-	cmpl  $8, %r13d                       # If this is a small dtable, jump to the small dtable handlers
+1:	                                      # classLoaded
+	mov   DTABLE_OFFSET(%r10), %r10       # Load the dtable from the class into r10
+	mov   %rax, -8(%rsp)                  # %rax contains information for variadic calls
+	mov   %rbx, -16(%rsp)                 # On the fast path, spill into the red zone
+	mov   (\sel), %eax                    # Load the selector index into %eax
+	mov   SHIFT_OFFSET(%r10), %r11d       # Load the shift (dtable size) into r11
+	cmpl  $8, %r11d                       # If this is a small dtable, jump to the small dtable handlers
 	je    2f 
-	cmpl  $0, %r13d
+	cmpl  $0, %r11d
 	je    3f 
 
-	mov   %r11, %r13
-	and   $0xff0000, %r13
-	shrl  $13, %r13d                      # Right shift 16, but then left shift by 3 *sizeof(void*)
-	add   %r13, %r12
-	mov   (%r12), %r12
-	mov   DATA_OFFSET(%r12), %r12
+	movl  %eax, %r11d
+	shrl  $16, %r11d
+	movq  DATA_OFFSET(%r10, %r11, 8), %r10
 2:                                        # dtable16:
-	mov   %r11, %r13
-	and   $0xff00, %r13
-	shrl  $5, %r13d
-	add   %r13, %r12
-	mov   (%r12), %r12
-	mov   DATA_OFFSET(%r12), %r12
+	movzbl %ah, %ebx
+	movq  DATA_OFFSET(%r10, %rbx, 8), %r10
 3:                                       # dtable8:
-	mov   %r11, %r13
-	and   $0xff, %r13
-	shll  $3, %r13d
-	add   %r13, %r12
-	mov   (%r12), %r10
-	pop   %r13
-	pop   %r12
+	movzbl %al, %ebx
+	mov   -8(%rsp), %rax
+	movq  DATA_OFFSET(%r10, %rbx, 8), %r10
+	mov   -16(%rsp), %rbx
 	test  %r10, %r10
 	jz    5f                             # Nil slot - invoke some kind of forwarding mechanism
 	mov   SLOT_OFFSET(%r10), %r10
@@ -193,7 +193,12 @@
 
 12:
 #endif // WITH_TRACING
+#if defined(__MSDOS__) || defined(_WIN64) || defined(__OS2__) || defined (__CYGWIN__)
+	mov   %r10, %rax
+	jmp   *__guard_dispatch_icall_fptr(%rip)
+#else
 	jmp   *%r10
+#endif
 4:                                       # returnNil:
 	                                     # Both of the return registers are
 	                                     # callee-save on x86-64, so we can
@@ -220,26 +225,26 @@
 
 #rdi rsi rdx
 	# We're (potentially) modifying the self argument with the lookup, so we don't want to be 
-.ifc "\receiver", "%rdi"
-	push  %rdi
-	mov   %rsp, %rdi
-	push  %rsi                           # Save _cmd (not preserved across calls)
-	push  %rdx
+.ifc "\receiver", FIRST_ARGUMENT_STR
+	push  FIRST_ARGUMENT
+	mov   %rsp, FIRST_ARGUMENT
+	push  SECOND_ARGUMENT                # Save _cmd (not preserved across calls)
+	push  THIRD_ARGUMENT
 .else
-	push  %rdi                           # Save the sret pointer
-	push  %rsi                           # Save self where it can be modified
-	mov   %rsp, %rdi
-	push  %rdx
-	mov   %rdx, %rsi                     # move _cmd to where the callee expects it to be
+	push  FIRST_ARGUMENT                 # Save the sret pointer
+	push  SECOND_ARGUMENT                # Save self where it can be modified
+	mov   %rsp, FIRST_ARGUMENT
+	push  THIRD_ARGUMENT
+	mov   THIRD_ARGUMENT, SECOND_ARGUMENT # move _cmd to where the callee expects it to be
 .endif
 
-	.cfi_adjust_cfa_offset 0xD8
+	FRAME_OFFSET(0xD8)
 	call  CDECL(slowMsgLookup)           # Call the slow lookup function
 	mov   %rax, %r10                     # Load the returned IMP
 
-	pop   %rdx
-	pop   %rsi
-	pop   %rdi
+	pop   THIRD_ARGUMENT
+	pop   SECOND_ARGUMENT
+	pop   FIRST_ARGUMENT
 
 	movups	0x80(%rsp), %xmm0
 	movups	0x70(%rsp), %xmm1
@@ -259,21 +264,50 @@
 	jmp   7b
 6:                                        # smallObject:
 	and   \receiver, %r10                 # Find the small int type
-	shll  $3, %r10d
 	lea   CDECL(SmallObjectClasses)(%rip), %r11
-	add   %r11, %r10
-	mov   (%r10), %r10
+	mov   (%r11, %r10, 8), %r10
 	jmp   1b 
-	.cfi_endproc
+	END_PROC(\fnname)
 .endm
+#if defined(__MSDOS__) || defined(_WIN64) || defined(__OS2__) || defined (__CYGWIN__)
+.text
+.def objc_msgSend;
+.scl 2;
+.type 32;
+.endef
+.def objc_msgSend_fpret;
+.scl 2;
+.type 32;
+.endef
+.def objc_msgSend_stret;
+.scl 2;
+.type 32;
+.endef
+.globl CDECL(objc_msgSend_fpret)
+TYPE_DIRECTIVE(CDECL(objc_msgSend_fpret), @function)
+.globl CDECL(objc_msgSend)
+TYPE_DIRECTIVE(CDECL(objc_msgSend), @function)
+CDECL(objc_msgSend_fpret):
+CDECL(objc_msgSend):
+	MSGSEND objc_msgSend, %rcx, %rdx
+.globl CDECL(objc_msgSend_stret)
+TYPE_DIRECTIVE(CDECL(objc_msgSend_stret), @function)
+CDECL(objc_msgSend_stret):
+	MSGSEND objc_msgSend_stret, %rdx, %r8
+.section        .drectve,"yn"
+.ascii  " /EXPORT:objc_msgSend"
+.ascii  " /EXPORT:objc_msgSend_fpret"
+.ascii  " /EXPORT:objc_msgSend_stret"
+#else
 .globl CDECL(objc_msgSend)
 TYPE_DIRECTIVE(CDECL(objc_msgSend), @function)
 .globl CDECL(objc_msgSend_fpret)
 TYPE_DIRECTIVE(CDECL(objc_msgSend_fpret), @function)
 CDECL(objc_msgSend_fpret):
 CDECL(objc_msgSend):
-	MSGSEND %rdi, %rsi
+	MSGSEND objc_msgSend, %rdi, %rsi
 .globl CDECL(objc_msgSend_stret)
 TYPE_DIRECTIVE(CDECL(objc_msgSend_stret), @function)
 CDECL(objc_msgSend_stret):
-	MSGSEND %rsi, %rdx
+	MSGSEND objc_msgSend_stret, %rsi, %rdx
+#endif

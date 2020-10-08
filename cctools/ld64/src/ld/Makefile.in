@@ -125,7 +125,7 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 ld_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(ld_CXXFLAGS) \
-	$(CXXFLAGS) $(ld_LDFLAGS) $(LDFLAGS) -o $@
+	$(CXXFLAGS) $(ld_LDFLAGS) $(LDFLAGS) $(ld_OBJECTS) $(LIBS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -447,14 +447,14 @@ ld_CFLAGS = \
 
 ld_SOURCES = \
 	debugline.c  \
-	InputFiles.cpp  \
-	ld.cpp  \
-	Options.cpp  \
+	SymbolTable.cpp \
 	OutputFile.cpp  \
 	Resolver.cpp  \
-	Snapshot.cpp  \
-	SymbolTable.cpp \
+	InputFiles.cpp  \
 	PlatformSupport.cpp \
+	Snapshot.cpp  \
+	Options.cpp  \
+	ld.cpp  \
 	code-sign-blobs/blob.cpp
 
 all: all-recursive
@@ -546,7 +546,7 @@ code-sign-blobs/ld-blob.$(OBJEXT): code-sign-blobs/$(am__dirstamp)
 
 ld$(EXEEXT): $(ld_OBJECTS) $(ld_DEPENDENCIES) $(EXTRA_ld_DEPENDENCIES) 
 	@rm -f ld$(EXEEXT)
-	$(AM_V_CXXLD)$(ld_LINK) $(ld_OBJECTS) $(ld_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(ld_LINK) $(ld_LDADD)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
