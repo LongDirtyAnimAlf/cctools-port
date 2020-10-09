@@ -7,7 +7,7 @@ PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
 SDK_VERSION="13.7"
-BASEARCH="aarch64"
+BASEARCH="arm64"
 BASEOS="iPhoneOS"
 
 if [ $OPERATING_SYSTEM == "Android" ]; then
@@ -85,7 +85,7 @@ function git_clone_repository
 }
 
 
-TRIPLE="$BASEARCH-apple-darwin11"
+TRIPLE="aarch64-apple-darwin11"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
