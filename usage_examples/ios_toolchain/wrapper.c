@@ -18,6 +18,8 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -28,10 +30,31 @@
 #endif
 
 #ifdef __OpenBSD__
-#include <sys/types.h>
 #include <sys/user.h>
-#include <sys/stat.h>
+
 #endif
+
+#if defined(WINDOWS) || defined(_WIN32) || defined(__CYGWIN__)
+#include <windows.h>
+#endif
+
+int fileExists (char *filename)
+{
+  struct stat info;
+  return (stat (filename, &info) == 0);
+}
+
+int dirExists(const char *path)
+{
+    struct stat info;
+
+    if(stat( path, &info ) != 0)
+        return 0;
+    else if(info.st_mode & S_IFDIR)
+        return 1;
+    else
+        return 0;
+}
 
 char *get_executable_path(char *epath, size_t buflen)
 {
@@ -94,6 +117,21 @@ char *get_executable_path(char *epath, size_t buflen)
     free(argv);
     if (!ok) return NULL;
     l = strlen(epath);
+#elif defined(WINDOWS) || defined(_WIN32) || defined(__CYGWIN__)
+  char full_path[MAX_PATH];
+  unsigned int l = 0;
+  l = GetModuleFileName(NULL, full_path, MAX_PATH);
+  p = strchr(full_path, '\\');
+  while (p) {
+    *p = '/';
+    p  = strchr(full_path, '\\');
+  }
+
+  p = strchr(full_path, ':');
+  if (p)
+    *p = '/';
+
+  snprintf(epath, buflen, "%c%s%c%s", '/', "cygdrive", '/', full_path);    
 #else
     ssize_t l = readlink("/proc/self/exe", epath, buflen - 1);
     if (l > 0) epath[l] = '\0';
@@ -130,11 +168,13 @@ void env(char **p, const char *name, char *fallback)
 
 int main(int argc, char *argv[])
 {
-    char **args = alloca(sizeof(char*) * (argc+12));
+    char **args = alloca(sizeof(char*) * (argc+14));
     int i, j;
 
     char execpath[PATH_MAX+1];
     char sdkpath[PATH_MAX+1];
+    char compilerpath[PATH_MAX+1];
+    char codesign_allocate[64];
     char osvermin[64];
 
     char *compiler;
@@ -144,9 +184,54 @@ int main(int argc, char *argv[])
     char *cpu;
     char *osmin;
 
-    target_info(argv, &target, &compiler);
+
     if (!get_executable_path(execpath, sizeof(execpath))) abort();
-    snprintf(sdkpath, sizeof(sdkpath) - 1, "%s/../SDK/" SDK_DIR, execpath);
+
+    target_info(argv, &target, &compiler);
+
+    snprintf(compilerpath, sizeof(compilerpath), "%s/%s", execpath, compiler);
+
+
+    if (!fileExists(compilerpath))
+    {
+        snprintf(compilerpath, sizeof(compilerpath), "%s", compiler);
+    }
+
+    //snprintf(sdkpath, sizeof(sdkpath), "%s/../SDK", execpath);
+    snprintf(sdkpath, sizeof(sdkpath), "%s/../SDK/" SDK_DIR, execpath);
+
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../lib/arm-ios/" SDK_DIR, execpath);
+    }
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../../lib/arm-ios/" SDK_DIR, execpath);
+    }
+    
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../lib/arm-ios/SDK", execpath);
+    }
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../lib/arm-ios", execpath);
+    }
+    
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../../lib/arm-ios/SDK", execpath);
+    }
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../../lib/arm-ios", execpath);
+    }
+    
+    snprintf(codesign_allocate, sizeof(codesign_allocate),
+             "%s-codesign_allocate", target);
+
+    setenv("CODESIGN_ALLOCATE", codesign_allocate, 1);
+    setenv("IOS_FAKE_CODE_SIGN", "1", 1);
 
     env(&sdk, "IOS_SDK_SYSROOT", sdkpath);
     env(&cpu, "IOS_TARGET_CPU", TARGET_CPU);
@@ -167,7 +252,7 @@ int main(int argc, char *argv[])
 
     i = 0;
 
-    args[i++] = compiler;
+    args[i++] = compilerpath;
     args[i++] = "-target";
     args[i++] = target;
     args[i++] = "-isysroot";
@@ -180,7 +265,9 @@ int main(int argc, char *argv[])
     }
 
     args[i++] = osvermin;
-    args[i++] = "-mlinker-version=450.3";
+    args[i++] = "-mlinker-version=540";
+
+    args[i++] = "-Wno-unused-command-line-argument";
 
     for (j = 1; j < argc; ++i, ++j)
         args[i] = argv[j];
@@ -188,7 +275,7 @@ int main(int argc, char *argv[])
     args[i] = NULL;
 
     setenv("COMPILER_PATH", execpath, 1);
-    execvp(compiler, args);
+    execvp(compilerpath, args);
 
     fprintf(stderr, "cannot invoke compiler!\n");
     return 1;

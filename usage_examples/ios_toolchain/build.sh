@@ -95,7 +95,21 @@ echo ""
 echo "*** extracting SDK ***"
 echo ""
 
+pushd $SDKDIR &>/dev/null
+
 SDK_VERSION="10.3"
+
+SYSLIB=$(find $SDKDIR -name libSystem.dylib -o -name libSystem.tbd | head -n1)
+if [ -z "$SYSLIB" ]; then
+    echo "SDK should contain libSystem{.dylib,.tbd}" 1>&2
+    exit 1
+fi
+WRAPPER_SDKDIR=$(echo iPhoneOS*sdk | head -n1)
+if [ -z "$WRAPPER_SDKDIR" ]; then
+    echo "broken SDK" 1>&2
+    exit 1
+fi
+popd &>/dev/null
 
 echo ""
 echo "*** building wrapper ***"
