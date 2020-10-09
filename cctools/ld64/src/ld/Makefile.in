@@ -124,7 +124,7 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 ld_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(ld_CXXFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(ld_CXXFLAGS) -Wl,--allow-multiple-definition \
 	$(CXXFLAGS) $(ld_LDFLAGS) $(LDFLAGS) $(ld_OBJECTS) $(LIBS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)

@@ -16,8 +16,9 @@
 #include <sys/stat.h>
 #include <libgen.h>
 #include <time.h>
+#if __has_extension(blocks) // ld64-port
 #include <Block.h>
-
+#endif
 #include "Snapshot.h"
 #include "Options.h"
 
@@ -670,12 +671,14 @@ void Snapshot::setSnapshotMode(SnapshotMode mode)
   }
 }
 
-void Snapshot::setSnapshotName(const char *path) { }
+void Snapshot::setOutputPath(const char *path) { }
+void Snapshot::setSnapshotName() { }
 void Snapshot::buildPath(char *buf, const char *subdir, const char *file) { }
 void Snapshot::buildUniquePath(char *buf, const char *subdir, const char *file) { }
+const char * Snapshot::subdir(const char *subdir) { }
 void Snapshot::copyFileToSnapshot(const char *sourcePath, const char *subdir, char *path) { }
 void Snapshot::createSnapshot() { }
-void Snapshot::writeCommandLine(StringVector &args, const char *filename, bool includeCWD) { }
+void Snapshot::writeCommandLine(bool rawArgs) { }
 void Snapshot::recordRawArgs(int argc, const char *argv[]) { }
 void Snapshot::addSnapshotLinkArg(int argIndex, int argCount, int fileArg) { }
 void Snapshot::recordArch(const char *arch) { }
