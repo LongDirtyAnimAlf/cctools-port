@@ -136,7 +136,7 @@ elif ! which dsymutil &>/dev/null; then
     echo "int main(){return 0;}" | cc -xc -O2 -o $TARGETDIR/bin/dsymutil -
 fi
 
-verbose_cmd cc -O2 -Wall -Wextra -pedantic -Wno-format-truncation wrapper.c \
+verbose_cmd cc -O2 -Wall -Wextra -pedantic wrapper.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
     -DOS_VER_MIN=\"\\\"$SDK_VERSION\\\"\" \
@@ -183,7 +183,7 @@ popd &>/dev/null
 pushd tmp &>/dev/null
 mkdir -p cctools
 pushd cctools &>/dev/null
-../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_BSD_SOURCE -fcommon"
+../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR
 make clean && make -j$JOBS && make install
 popd &>/dev/null
 popd &>/dev/null

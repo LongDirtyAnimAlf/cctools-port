@@ -5,4 +5,4 @@
 #define PROGRAM "libBlocksRuntime"
 #define VERSION "0.1"
 #define TARGET "linux"
-#define CFLAGS "-DBlocksRuntime_EXPORTS -fno-PIC -std=c99 -Wall -Wextra -W -pedantic -Wno-unused-parameter"
+#define CFLAGS "-DBlocksRuntime_EXPORTS -fPIC -std=c99 -Wall -Wextra -W -pedantic -Wno-unused-parameter"

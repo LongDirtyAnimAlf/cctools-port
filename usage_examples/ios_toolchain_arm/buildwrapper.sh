@@ -91,10 +91,6 @@ mkdir -p $TARGETDIR
 mkdir -p $TARGETDIR/bin
 mkdir -p $SDKDIR
 
-echo ""
-echo "*** extracting SDK ***"
-echo ""
-
 pushd $SDKDIR &>/dev/null
 
 SDK_VERSION="10.3"
@@ -111,32 +107,10 @@ if [ -z "$WRAPPER_SDKDIR" ]; then
 fi
 popd &>/dev/null
 
-echo ""
-echo "*** building wrapper ***"
-echo ""
+echo "$BASEARCH"
+echo "$WRAPPER_SDKDIR"
 
-OK=0
-
-set +e
-which $LLVM_DSYMUTIL &>/dev/null
-if [ $? -eq 0 ]; then
-    case $($LLVM_DSYMUTIL --version | \
-           grep "LLVM version" | head -1 | awk '{print $3}') in
-        3.8*|3.9*|4.0*|5.0*|6.0*|7.0*|8.0*|9.0*) OK=1 ;;
-    esac
-fi
-set -e
-
-if [ $OK -eq 1 ]; then
-    ln -sf $(which $LLVM_DSYMUTIL) $TARGETDIR/bin/dsymutil
-    pushd $TARGETDIR/bin &>/dev/null
-    ln -sf $TRIPLE-lipo lipo
-    popd &>/dev/null
-elif ! which dsymutil &>/dev/null; then
-    echo "int main(){return 0;}" | cc -xc -O2 -o $TARGETDIR/bin/dsymutil -
-fi
-
-verbose_cmd cc -O2 -Wall -Wextra -pedantic -Wno-format-truncation wrapper.c \
+verbose_cmd cc -O2 -Wall -Wextra -pedantic wrapper.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
     -DOS_VER_MIN=\"\\\"$SDK_VERSION\\\"\" \
@@ -144,48 +118,6 @@ verbose_cmd cc -O2 -Wall -Wextra -pedantic -Wno-format-truncation wrapper.c \
 
 pushd $TARGETDIR/bin &>/dev/null
 verbose_cmd ln -sf $TRIPLE-clang $TRIPLE-clang++
-popd &>/dev/null
-
-echo ""
-echo "*** building ldid ***"
-echo ""
-
-rm -rf tmp
-
-mkdir -p tmp
-pushd tmp &>/dev/null
-git_clone_repository https://github.com/tpoechtrager/ldid.git master
-pushd ldid &>/dev/null
-make INSTALLPREFIX=$TARGETDIR -j$JOBS install
-popd &>/dev/null
-popd &>/dev/null
-
-echo ""
-echo "*** building apple-libtapi ***"
-echo ""
-
-pushd tmp &>/dev/null
-git_clone_repository https://github.com/tpoechtrager/apple-libtapi.git 1100.0.11
-pushd apple-libtapi &>/dev/null
-INSTALLPREFIX=$TARGETDIR ./build.sh
-./install.sh
-popd &>/dev/null
-popd &>/dev/null
-
-echo ""
-echo "*** building cctools / ld64 ***"
-echo ""
-
-pushd ../../cctools &>/dev/null
-git clean -fdx &>/dev/null || true
-popd &>/dev/null
-
-pushd tmp &>/dev/null
-mkdir -p cctools
-pushd cctools &>/dev/null
-../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_BSD_SOURCE -fcommon"
-make clean && make -j$JOBS && make install
-popd &>/dev/null
 popd &>/dev/null
 
 echo ""

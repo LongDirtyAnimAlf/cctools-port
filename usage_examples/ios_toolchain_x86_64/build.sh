@@ -6,7 +6,9 @@ pushd "${0%/*}" &>/dev/null
 PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
-BASEARCH="armv7"
+SDK_VERSION="10.15"
+BASEARCH="x86_64"
+BASEOS="MacOSX"
 
 if [ $OPERATING_SYSTEM == "Android" ]; then
   export CC="clang -D__ANDROID_API__=26"
@@ -83,7 +85,7 @@ function git_clone_repository
 }
 
 
-TRIPLE="arm-apple-darwin11"
+TRIPLE="$BASEARCH-apple-darwin11"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
@@ -92,19 +94,17 @@ mkdir -p $TARGETDIR/bin
 mkdir -p $SDKDIR
 
 echo ""
-echo "*** extracting SDK ***"
+echo "*** checking SDK ***"
 echo ""
 
 pushd $SDKDIR &>/dev/null
-
-SDK_VERSION="10.3"
 
 SYSLIB=$(find $SDKDIR -name libSystem.dylib -o -name libSystem.tbd | head -n1)
 if [ -z "$SYSLIB" ]; then
     echo "SDK should contain libSystem{.dylib,.tbd}" 1>&2
     exit 1
 fi
-WRAPPER_SDKDIR=$(echo iPhoneOS*sdk | head -n1)
+WRAPPER_SDKDIR=$(echo $BASEOS*sdk | head -n1)
 if [ -z "$WRAPPER_SDKDIR" ]; then
     echo "broken SDK" 1>&2
     exit 1
@@ -136,7 +136,7 @@ elif ! which dsymutil &>/dev/null; then
     echo "int main(){return 0;}" | cc -xc -O2 -o $TARGETDIR/bin/dsymutil -
 fi
 
-verbose_cmd cc -O2 -Wall -Wextra -pedantic -Wno-format-truncation wrapper.c \
+verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
     -DOS_VER_MIN=\"\\\"$SDK_VERSION\\\"\" \
@@ -150,7 +150,7 @@ echo ""
 echo "*** building ldid ***"
 echo ""
 
-rm -rf tmp
+# rm -rf tmp
 
 mkdir -p tmp
 pushd tmp &>/dev/null
@@ -177,14 +177,15 @@ echo "*** building cctools / ld64 ***"
 echo ""
 
 pushd ../../cctools &>/dev/null
-git clean -fdx &>/dev/null || true
+# git clean -fdx &>/dev/null || true
 popd &>/dev/null
 
 pushd tmp &>/dev/null
 mkdir -p cctools
 pushd cctools &>/dev/null
-../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_BSD_SOURCE -fcommon"
-make clean && make -j$JOBS && make install
+../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_GNU_SOURCE -fcommon"
+# make clean && make -j$JOBS && make install
+make -j$JOBS && make install
 popd &>/dev/null
 popd &>/dev/null
 
