@@ -1066,9 +1066,20 @@ static std::string getDirPath(const std::string& path)
 		return path.substr(0, lastSlashPos+1);
 }
 
+static std::string get_extension(const std::string &path)
+{
+	auto result = path;
+	auto lastSlashIdx = result.find_last_of('/');
+	auto lastDotIdx = result.find_last_of('.');
+	if (lastDotIdx != std::string::npos && lastDotIdx > lastSlashIdx)
+		result.erase(0,lastDotIdx);
+	return result;
+}
+
 Options::FileInfo Options::findFile(const std::string &path, const ld::dylib::File* fromDylib) const
 {
 	FileInfo result;
+	bool found;
 
 	// if absolute path and not a .o file, then use SDK prefix
 	if ( (path[0] == '/') && (strcmp(&path[path.size()-2], ".o") != 0) ) {
@@ -1128,6 +1139,23 @@ Options::FileInfo Options::findFile(const std::string &path, const ld::dylib::Fi
 	// try raw path
 	if ( findFile(path, {".tbd"}, result) )
 		return result;
+
+// get file extension
+	auto Extension = get_extension(path);
+	// remove line endings from extension
+	while ( Extension.find ("\n") != std::string::npos )
+	{
+	        Extension.erase ( Extension.find ("\n"), 1 );
+	}
+	while ( Extension.find ("\r") != std::string::npos )
+	{
+	        Extension.erase ( Extension.find ("\r"), 1 );
+	}
+	// find file with its own extension
+	found = findFile(path, {Extension}, result);
+	if ( found ) {
+		return result;
+ 	}		
 
 	// not found
 	throwf("file not found: %s", path.c_str());
