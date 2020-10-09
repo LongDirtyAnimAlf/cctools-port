@@ -6,7 +6,8 @@ pushd "${0%/*}" &>/dev/null
 PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
-SDK_VERSION="10.15"
+SDK_VERSION="10.13"
+MIN_SDK_VERSION="10.6"
 BASEARCH="x86_64"
 BASEOS="MacOSX"
 
@@ -139,7 +140,7 @@ fi
 verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
-    -DOS_VER_MIN=\"\\\"$SDK_VERSION\\\"\" \
+    -DOS_VER_MIN=\"\\\"$MIN_SDK_VERSION\\\"\" \
     -o $TARGETDIR/bin/$TRIPLE-clang
 
 pushd $TARGETDIR/bin &>/dev/null

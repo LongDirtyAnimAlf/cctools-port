@@ -6,10 +6,10 @@ pushd "${0%/*}" &>/dev/null
 PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
-SDK_VERSION="13.7"
-MIN_SDK_VERSION="8.0"
-BASEARCH="arm64"
-BASEOS="iPhoneOS"
+SDK_VERSION="10.13"
+MIN_SDK_VERSION="10.6"
+BASEARCH="i386"
+BASEOS="MacOSX"
 
 if [ $OPERATING_SYSTEM == "Android" ]; then
   export CC="clang -D__ANDROID_API__=26"
@@ -86,7 +86,7 @@ function git_clone_repository
 }
 
 
-TRIPLE="aarch64-apple-darwin11"
+TRIPLE="$BASEARCH-apple-darwin11"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
@@ -148,30 +148,12 @@ verbose_cmd ln -sf $TRIPLE-clang $TRIPLE-clang++
 popd &>/dev/null
 
 echo ""
-echo "*** building ldid ***"
+echo "*** skip building ldid ***"
 echo ""
 
-# rm -rf tmp
-
-mkdir -p tmp
-pushd tmp &>/dev/null
-# git_clone_repository https://github.com/tpoechtrager/ldid.git master
-pushd ldid &>/dev/null
-make INSTALLPREFIX=$TARGETDIR -j$JOBS install
-popd &>/dev/null
-popd &>/dev/null
-
 echo ""
-echo "*** building apple-libtapi ***"
+echo "*** skip building apple-libtapi ***"
 echo ""
-
-pushd tmp &>/dev/null
-git_clone_repository https://github.com/tpoechtrager/apple-libtapi.git 1100.0.11
-pushd apple-libtapi &>/dev/null
-INSTALLPREFIX=$TARGETDIR ./build.sh
-./install.sh
-popd &>/dev/null
-popd &>/dev/null
 
 echo ""
 echo "*** building cctools / ld64 ***"
@@ -205,4 +187,3 @@ echo "*** all done ***"
 echo ""
 echo "do not forget to add $TARGETDIR/bin to your PATH variable"
 echo ""
-

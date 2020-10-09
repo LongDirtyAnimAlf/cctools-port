@@ -7,6 +7,7 @@ PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
 SDK_VERSION="13.7"
+MIN_SDK_VERSION="8.0"
 BASEARCH="arm64"
 BASEOS="iPhoneOS"
 
@@ -139,7 +140,7 @@ fi
 verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
-    -DOS_VER_MIN=\"\\\"$SDK_VERSION\\\"\" \
+    -DOS_VER_MIN=\"\\\"$MIN_SDK_VERSION\\\"\" \
     -o $TARGETDIR/bin/$TRIPLE-clang
 
 pushd $TARGETDIR/bin &>/dev/null
