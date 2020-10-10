@@ -7,7 +7,7 @@ PLATFORM=$(uname -s)
 OPERATING_SYSTEM=$(uname -o || echo "-")
 
 SDK_VERSION="13.7"
-MIN_SDK_VERSION="8.0"
+MIN_SDK_VERSION="9.0"
 BASEARCH="arm64"
 BASEOS="iPhoneOS"
 
