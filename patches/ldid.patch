@@ -1,0 +1,21 @@
+--- ldid.cpp	Sat Oct 24 13:48:59 2020
++++ ldid.cpp	Sat Oct 24 13:44:20 2020
+@@ -2164,7 +2164,7 @@
+             Commit(commit.first, commit.second);
+ }
+ 
+-#ifndef __WIN32__
++#if !defined(__WIN32__) && !defined(__CYGWIN__)
+ std::string readlink(const std::string &path) {
+     for (size_t size(1024); ; size *= 2) {
+         std::string data;
+--- Makefile	Sat Oct 24 13:48:59 2020
++++ Makefile	Sat Oct 24 13:33:59 2020
+@@ -10,6 +10,7 @@
+ CFLAGS += -Wno-strict-aliasing
+ 
+ CXXFLAGS += -O2 -fPIC
++CXXFLAGS += -std=gnu++11
+ CXXFLAGS += $(INCLUDES)
+ CXXFLAGS += -Wall
+ CXXFLAGS += -Wno-sign-compare

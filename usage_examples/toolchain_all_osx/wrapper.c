@@ -168,7 +168,7 @@ void env(char **p, const char *name, char *fallback)
 
 int main(int argc, char *argv[])
 {
-    char **args = alloca(sizeof(char*) * (argc+14));
+    char **args = alloca(sizeof(char*) * (argc+15));
     int i, j;
 
     char execpath[PATH_MAX+1];
@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
     args[i++] = "-mlinker-version=540";
 
     args[i++] = "-Wno-unused-command-line-argument";
+    args[i++] = "-Wno-overriding-t-option";
 
     for (j = 1; j < argc; ++i, ++j)
         args[i] = argv[j];

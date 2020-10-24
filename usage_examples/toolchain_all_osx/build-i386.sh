@@ -16,6 +16,11 @@ if [ $OPERATING_SYSTEM == "Android" ]; then
   export CXX="clang++ -D__ANDROID_API__=26"
 fi
 
+GNUMAKE="make"
+if [ $OPERATING_SYSTEM == "FreeBSD" ] || [ $OPERATING_SYSTEM == "OpenBSD" ] || [ $OPERATING_SYSTEM == "NetBSD" ] || [ $OPERATING_SYSTEM == "Solaris" ]; then
+  GNUMAKE="gmake"
+fi
+
 if [ -z "$LLVM_DSYMUTIL" ]; then
     LLVM_DSYMUTIL=llvm-dsymutil
 fi
@@ -90,6 +95,8 @@ TRIPLE="$BASEARCH-apple-darwin11"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
+PATCH_DIR=$PWD/../../patches
+
 mkdir -p $TARGETDIR
 mkdir -p $TARGETDIR/bin
 mkdir -p $SDKDIR
@@ -148,27 +155,20 @@ verbose_cmd ln -sf $TRIPLE-clang $TRIPLE-clang++
 popd &>/dev/null
 
 echo ""
-echo "*** skip building ldid ***"
-echo ""
-
-echo ""
-echo "*** skip building apple-libtapi ***"
-echo ""
-
-echo ""
 echo "*** building cctools / ld64 ***"
 echo ""
 
 pushd ../../cctools &>/dev/null
 # git clean -fdx &>/dev/null || true
+# patch -p1 < $PATCH_DIR/cctools.patch
 popd &>/dev/null
 
 pushd tmp &>/dev/null
 mkdir -p cctools
 pushd cctools &>/dev/null
 ../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_GNU_SOURCE -fcommon"
-# make clean && make -j$JOBS && make install
-make -j$JOBS && make install
+# $GNUMAKE clean && $GNUMAKE -j$JOBS && $GNUMAKE install
+$GNUMAKE -j$JOBS && $GNUMAKE install
 popd &>/dev/null
 popd &>/dev/null
 
@@ -187,3 +187,4 @@ echo "*** all done ***"
 echo ""
 echo "do not forget to add $TARGETDIR/bin to your PATH variable"
 echo ""
+

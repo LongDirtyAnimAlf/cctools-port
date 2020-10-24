@@ -16,6 +16,11 @@ if [ $OPERATING_SYSTEM == "Android" ]; then
   export CXX="clang++ -D__ANDROID_API__=26"
 fi
 
+GNUMAKE="make"
+if [ $OPERATING_SYSTEM == "FreeBSD" ] || [ $OPERATING_SYSTEM == "OpenBSD" ] || [ $OPERATING_SYSTEM == "NetBSD" ] || [ $OPERATING_SYSTEM == "Solaris" ]; then
+  GNUMAKE="gmake"
+fi
+
 if [ -z "$LLVM_DSYMUTIL" ]; then
     LLVM_DSYMUTIL=llvm-dsymutil
 fi
@@ -90,6 +95,8 @@ TRIPLE="aarch64-apple-darwin11"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
+PATCH_DIR=$PWD/../../patches
+
 mkdir -p $TARGETDIR
 mkdir -p $TARGETDIR/bin
 mkdir -p $SDKDIR
@@ -155,9 +162,10 @@ echo ""
 
 mkdir -p tmp
 pushd tmp &>/dev/null
-# git_clone_repository https://github.com/tpoechtrager/ldid.git master
+git_clone_repository https://github.com/tpoechtrager/ldid.git master
 pushd ldid &>/dev/null
-make INSTALLPREFIX=$TARGETDIR -j$JOBS install
+patch -p0 < $PATCH_DIR/ldid.patch
+$GNUMAKE INSTALLPREFIX=$TARGETDIR -j$JOBS install
 popd &>/dev/null
 popd &>/dev/null
 
@@ -178,15 +186,16 @@ echo "*** building cctools / ld64 ***"
 echo ""
 
 pushd ../../cctools &>/dev/null
-# git clean -fdx &>/dev/null || true
+git clean -fdx &>/dev/null || true
+patch -p1 < $PATCH_DIR/cctools.patch
 popd &>/dev/null
 
 pushd tmp &>/dev/null
 mkdir -p cctools
 pushd cctools &>/dev/null
 ../../../../cctools/configure --target=$TRIPLE --prefix=$TARGETDIR --with-libtapi=$TARGETDIR CFLAGS="-D_GNU_SOURCE -fcommon"
-# make clean && make -j$JOBS && make install
-make -j$JOBS && make install
+# $GNUMAKE clean && $GNUMAKE -j$JOBS && $GNUMAKE install
+$GNUMAKE -j$JOBS && $GNUMAKE install
 popd &>/dev/null
 popd &>/dev/null
 
