@@ -36,7 +36,82 @@
 
 #if defined(WINDOWS) || defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include <errno.h>
+int setenv( const char *var, const char *value, int overwrite )
+{
+  /* Core implementation for both setenv() and unsetenv() functions;
+   * at the outset, assume that the requested operation may fail.
+   */
+  int retval = -1;
+
+  /* The specified "var" name MUST be non-NULL, not a zero-length
+   * string, and must not include any '=' character.
+   */
+  if( var && *var && (strchr( var, '=' ) == NULL) )
+  {
+    /* A properly named variable may be added to, removed from,
+     * or modified within the environment, ONLY if "overwrite"
+     * mode is enabled, OR if the named variable does not yet
+     * exist...
+     */
+    if( overwrite || getenv( var ) == NULL )
+    {
+      /* ... in which cases, we convert the specified name and
+       * value into the appropriate form for use with putenv(),
+       * (noting that we accept a NULL "value" as equivalent to
+       * a zero-length string, which renders putenv() as the
+       * equivalent of unsetenv()).
+       */
+      const char *fmt = "%s=%s";
+      const char *val = value ? value : "";
+      char buf[1 + snprintf( NULL, 0, fmt, var, val )];
+      snprintf( buf, sizeof( buf ), fmt, var, val );
+
+      /* "buf" is now formatted as "var=value", in the form
+       * required by putenv(), but it exists only within our
+       * volatile stack-frame space.  POSIX.1 suggests that we
+       * should copy it to more persistent storage, before it
+       * is passed to putenv(), to associate an environment
+       * pointer with it.  However, we note that Microsoft's
+       * putenv() implementation appears to make such a copy
+       * in any case, so we do not do so; (in fact, if we did
+       * strdup() it (say), then we would leak memory).
+       */
+      if( (retval = putenv( buf )) != 0 )
+    /*
+     * If putenv() returns non-zero, indicating failure, the
+     * most probable explanation is that there wasn't enough
+     * free memory; ensure that errno is set accordingly.
+     */
+        errno = ENOMEM;
+    }
+    else
+      /* The named variable already exists, and overwrite mode
+       * was not enabled; there is nothing to be done.
+       */
+      retval = 0;
+  }
+  else
+    /* The specified environment variable name was invalid.
+     */
+    errno = EINVAL;
+
+  /* Succeed or fail, "retval" has now been set to indicate the
+   * appropriate status for return.
+   */
+  return retval;
+}
+
+int unsetenv( const char *__name )
+{
+  return setenv( __name, NULL, 1 );
+}
 #endif
+
+#endif
+
 
 int fileExists (char *filename)
 {
@@ -121,6 +196,7 @@ char *get_executable_path(char *epath, size_t buflen)
   char full_path[MAX_PATH];
   unsigned int l = 0;
   l = GetModuleFileName(NULL, full_path, MAX_PATH);
+#if defined(__CYGWIN__)
   p = strchr(full_path, '\\');
   while (p) {
     *p = '/';
@@ -130,22 +206,33 @@ char *get_executable_path(char *epath, size_t buflen)
   p = strchr(full_path, ':');
   if (p)
     *p = '/';
+  snprintf(epath, buflen, "%c%s%c%s", '/', "cygdrive", '/', full_path);
+#else
+  snprintf(epath, buflen, "%s", full_path);
+#endif
 
-  snprintf(epath, buflen, "%c%s%c%s", '/', "cygdrive", '/', full_path);    
 #else
     ssize_t l = readlink("/proc/self/exe", epath, buflen - 1);
     if (l > 0) epath[l] = '\0';
 #endif
     if (l <= 0) return NULL;
     epath[buflen - 1] = '\0';
+#if defined(__MINGW32__) || defined(__MINGW64__)
+    p = strrchr(epath, '\\');
+#else
     p = strrchr(epath, '/');
+#endif
     if (p) *p = '\0';
     return epath;
 }
 
 char *get_filename(char *str)
 {
+#if defined(__MINGW32__) || defined(__MINGW64__)
+    char *p = strrchr(str, '\\');
+#else
     char *p = strrchr(str, '/');
+#endif
     return p ? &p[1] : str;
 }
 
