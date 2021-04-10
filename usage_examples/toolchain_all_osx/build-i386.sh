@@ -91,7 +91,7 @@ function git_clone_repository
 }
 
 
-TRIPLE="$BASEARCH-apple-darwin11"
+TRIPLE="$BASEARCH-apple-darwin19"
 TARGETDIR="$PWD/target"
 SDKDIR="$TARGETDIR/SDK"
 
@@ -144,11 +144,13 @@ elif ! which dsymutil &>/dev/null; then
     echo "int main(){return 0;}" | cc -xc -O2 -o $TARGETDIR/bin/dsymutil -
 fi
 
-verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper.c \
+verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-clang.c \
     -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
     -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
     -DOS_VER_MIN=\"\\\"$MIN_SDK_VERSION\\\"\" \
     -o $TARGETDIR/bin/$TRIPLE-clang
+
+verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-ld.c -o $TARGETDIR/bin/$TRIPLE-ld
 
 pushd $TARGETDIR/bin &>/dev/null
 verbose_cmd ln -sf $TRIPLE-clang $TRIPLE-clang++
