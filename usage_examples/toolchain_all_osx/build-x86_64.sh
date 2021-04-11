@@ -120,7 +120,7 @@ fi
 popd &>/dev/null
 
 echo ""
-echo "*** building wrapper ***"
+echo "*** getting some tools ***"
 echo ""
 
 OK=0
@@ -130,7 +130,7 @@ which $LLVM_DSYMUTIL &>/dev/null
 if [ $? -eq 0 ]; then
     case $($LLVM_DSYMUTIL --version | \
            grep "LLVM version" | head -1 | awk '{print $3}') in
-        3.8*|3.9*|4.0*|5.0*|6.0*|7.0*|8.0*|9.0*) OK=1 ;;
+        3.8*|3.9*|4.0*|5.0*|6.0*|7.0*|8.0*|9.0*|10.0*|11.0*|12.0*) OK=1 ;;
     esac
 fi
 set -e
@@ -143,18 +143,6 @@ if [ $OK -eq 1 ]; then
 elif ! which dsymutil &>/dev/null; then
     echo "int main(){return 0;}" | cc -xc -O2 -o $TARGETDIR/bin/dsymutil -
 fi
-
-verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-clang.c \
-    -DSDK_DIR=\"\\\"$WRAPPER_SDKDIR\\\"\" \
-    -DTARGET_CPU=\"\\\"$BASEARCH\\\"\" \
-    -DOS_VER_MIN=\"\\\"$MIN_SDK_VERSION\\\"\" \
-    -o $TARGETDIR/bin/$TRIPLE-clang
-
-verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-ld.c -o $TARGETDIR/bin/$TRIPLE-ld
-
-pushd $TARGETDIR/bin &>/dev/null
-verbose_cmd ln -sf $TRIPLE-clang $TRIPLE-clang++
-popd &>/dev/null
 
 echo ""
 echo "*** building ldid ***"

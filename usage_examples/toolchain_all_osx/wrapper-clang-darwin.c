@@ -255,13 +255,12 @@ void env(char **p, const char *name, char *fallback)
 
 int main(int argc, char *argv[])
 {
-    char **args = alloca(sizeof(char*) * (argc+15));
+    char **args = alloca(sizeof(char*) * (argc+50));
     int i, j;
 
     char execpath[PATH_MAX+1];
     char sdkpath[PATH_MAX+1];
     char compilerpath[PATH_MAX+1];
-    char codesign_allocate[64];
     char osvermin[64];
 
     char *compiler;
@@ -346,12 +345,6 @@ int main(int argc, char *argv[])
     }
 
     
-    snprintf(codesign_allocate, sizeof(codesign_allocate),
-             "%s-codesign_allocate", target);
-
-    setenv("CODESIGN_ALLOCATE", codesign_allocate, 1);
-    setenv("OSX_FAKE_CODE_SIGN", "1", 1);
-
     env(&sdk, "OSX_SDK_SYSROOT", sdkpath);
     env(&cpu, "OSX_TARGET_CPU", TARGET_CPU);
 
@@ -377,15 +370,17 @@ int main(int argc, char *argv[])
     args[i++] = "-isysroot";
     args[i++] = sdk;
 
+    /*
     if (cpu)
     {
         args[i++] = "-arch";
         args[i++] = cpu;
     }
+    */
 
     args[i++] = osvermin;
     args[i++] = "-mlinker-version=540";
-
+    // args[i++] = "-Wl,-adhoc_codesign";
     args[i++] = "-Wno-unused-command-line-argument";
     args[i++] = "-Wno-overriding-t-option";
 
@@ -398,5 +393,6 @@ int main(int argc, char *argv[])
     execvp(compilerpath, args);
 
     fprintf(stderr, "cannot invoke compiler!\n");
+    
     return 1;
 }
