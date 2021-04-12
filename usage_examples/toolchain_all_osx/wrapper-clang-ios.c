@@ -343,6 +343,15 @@ int main(int argc, char *argv[])
     {
         snprintf(sdkpath, sizeof(sdkpath), "%s/../../../lib/all-ios", execpath);
     }
+
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../lib/arm-darwin", execpath);
+    }
+    if (!dirExists(sdkpath))
+    {
+        snprintf(sdkpath, sizeof(sdkpath), "%s/../../../lib/arm-darwin", execpath);
+    }
     
     env(&sdk, "IOS_SDK_SYSROOT", sdkpath);
     env(&cpu, "IOS_TARGET_CPU", TARGET_CPU);

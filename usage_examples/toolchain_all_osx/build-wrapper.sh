@@ -72,12 +72,12 @@ popd &>/dev/null
 
 verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-ld.c -o $TARGETDIR/bin/$BASEARCH-$BASETRIPLE-ld
 
+BASEOS="iPhoneOS"
 
 MIN_SDK_VERSION="9.0"
 SDK_VERSION="13.7"
 BASETRIPLE="apple-ios14"
 
-BASEOS="iPhoneOS"
 WRAPPER_SDKDIR="$SDKDIR/$BASEOS$SDK_VERSION.sdk"
 
 BASEARCH="aarch64"
@@ -93,6 +93,12 @@ verbose_cmd ln -sf $BASEARCH-$BASETRIPLE-clang $BASEARCH-$BASETRIPLE-clang++
 popd &>/dev/null
 
 verbose_cmd cc -O2 -Wall -Wextra -Wno-format-truncation -pedantic wrapper-ld.c -o $TARGETDIR/bin/$BASEARCH-$BASETRIPLE-ld
+
+MIN_SDK_VERSION="6.0"
+SDK_VERSION="10.0"
+BASETRIPLE="apple-ios10"
+
+WRAPPER_SDKDIR="$SDKDIR/$BASEOS$SDK_VERSION.sdk"
 
 BASEARCH="arm"
 
